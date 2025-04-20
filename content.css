@@ -1,0 +1,5 @@
+.notion-saver-selected {
+  outline: 2px solid #f28a8a !important;
+  background-color: rgba(242, 138, 138, 0.2) !important;
+  cursor: pointer !important;
+}

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Save Multiple Links to Notion</title>
+  <style>
+    body { font-family: sans-serif; margin: 10px; width: 320px; }
+    #links-list { max-height: 400px; overflow-y: auto; margin-top: 10px; }
+    .link-entry { margin-bottom: 5px; }
+    button { margin-right: 5px; }
+  </style>
+</head>
+<body>
+  <h2>Links on Page</h2>
+  <div>
+    <button id="refresh">Refresh Links</button>
+    <button id="save-selected">Save Selected</button>
+  </div>
+  <div id="links-list"></div>
+  <script src="popup.js"></script>
+</body>
+</html>

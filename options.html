@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Save to Notion Options</title>
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    .db-entry { margin-bottom: 10px; }
+    .db-entry input { margin-right: 5px; }
+    button { margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Save to Notion Settings</h1>
+  <label>Notion Integration Token:</label><br>
+  <input type="text" id="token" size="50" placeholder="secret_..." /><br>
+  <button id="fetch-dbs">Fetch Databases</button><br><br>
+  <h2>Select Default Notion Database</h2>
+  <p>Choose which database will be used for saving links.</p>
+  <div id="db-list"></div>
+  <button id="save">Save</button>
+  <script src="options.js"></script>
+</body>
+</html>
