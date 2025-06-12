@@ -1,30 +1,10 @@
 // content.js
 
 const selectedLinks = new Set();
-let saveBtn;
 let copyBtn;
+let notebookBtn;
 
 function createButtons() {
-  // Create save button
-  saveBtn = document.createElement('button');
-  saveBtn.id = 'notion-saver-save-btn';
-  saveBtn.textContent = 'Save Selected Links';
-  Object.assign(saveBtn.style, {
-    position: 'fixed',
-    bottom: '20px',
-    right: '120px',
-    zIndex: '10000',
-    padding: '8px 12px',
-    background: '#212121',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    display: 'none'
-  });
-  saveBtn.addEventListener('click', saveSelected);
-  document.body.appendChild(saveBtn);
-  
   // Create copy button
   copyBtn = document.createElement('button');
   copyBtn.id = 'notion-saver-copy-btn';
@@ -44,13 +24,33 @@ function createButtons() {
   });
   copyBtn.addEventListener('click', copySelectedToClipboard);
   document.body.appendChild(copyBtn);
+  
+  // Create NotebookLM save button
+  notebookBtn = document.createElement('button');
+  notebookBtn.id = 'notion-saver-notebook-btn';
+  notebookBtn.textContent = 'Save + NotebookLM';
+  Object.assign(notebookBtn.style, {
+    position: 'fixed',
+    bottom: '120px',
+    right: '20px',
+    zIndex: '10000',
+    padding: '8px 12px',
+    background: '#673AB7',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    display: 'none'
+  });
+  notebookBtn.addEventListener('click', saveSelectedWithNotebookTitle);
+  document.body.appendChild(notebookBtn);
 }
 
 function updateButtons() {
-  if (!saveBtn || !copyBtn) createButtons();
+  if (!copyBtn || !notebookBtn) createButtons();
   const display = selectedLinks.size > 0 ? 'block' : 'none';
-  saveBtn.style.display = display;
   copyBtn.style.display = display;
+  notebookBtn.style.display = display;
 }
 
 function handleLinkClick(e) {
@@ -67,15 +67,6 @@ function handleLinkClick(e) {
     a.classList.add('notion-saver-selected');
   }
   updateButtons();
-}
-
-function saveSelected() {
-  if (selectedLinks.size === 0) return;
-  const linksArray = Array.from(selectedLinks).map(href => {
-    const a = document.querySelector(`a[href="${href}"]`);
-    return { href, text: a?.innerText || href };
-  });
-  chrome.runtime.sendMessage({ action: 'saveSelectedLinks', links: linksArray });
 }
 
 // Copy selected links to clipboard
@@ -109,6 +100,18 @@ function copySelectedToClipboard() {
       console.error('Error copying links: ', err);
       alert('Failed to copy links to clipboard: ' + err.message);
     });
+}
+
+// Save selected links and ask for notebook title
+function saveSelectedWithNotebookTitle() {
+  if (selectedLinks.size === 0) return;
+  const notebookTitle = prompt('Enter NotebookLM title for selected links:');
+  if (!notebookTitle) return;
+  const linksArray = Array.from(selectedLinks).map(href => {
+    const a = document.querySelector(`a[href="${href}"]`);
+    return { href, text: a?.innerText || href };
+  });
+  chrome.runtime.sendMessage({ action: 'saveSelectedLinksNotebookLM', links: linksArray, notebookTitle });
 }
 
 // Initialize content script
