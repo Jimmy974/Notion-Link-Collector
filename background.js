@@ -91,25 +91,68 @@ chrome.contextMenus.onClicked.addListener((info) => {
 
 // Listen for multi-link save requests from the content script
 chrome.runtime.onMessage.addListener((message, sender) => {
-  if (message.action !== 'saveSelectedLinks') return;
-  const links = message.links;
-  chrome.storage.local.get(['token','defaultDbId'], ({token, defaultDbId: dbId}) => {
-    if (!token || !dbId) {
-      chrome.notifications.create('', { type: 'basic', iconUrl: 'icons/icon48.png', title: 'Save to Notion', message: 'Please select a default database in options page.' });
-      return;
-    }
-    const headers = { 'Authorization': `Bearer ${token}`, 'Notion-Version': '2022-06-28', 'Content-Type': 'application/json' };
-    links.forEach(link => {
-      const body = JSON.stringify({
-        parent: { database_id: dbId },
-        properties: { Name: { title: [{ text: { content: link.href } }] } },
-        children: [{ object: 'block', type: 'paragraph', paragraph: { rich_text: [{ type: 'text', text: { content: link.text || link.href, link: { url: link.href } } }] } }]
-      });
-      fetch('https://api.notion.com/v1/pages', { method: 'POST', headers, body })
-        .catch(err => {
-          chrome.notifications.create('', { type: 'basic', iconUrl: 'icons/icon48.png', title: 'Save to Notion', message: 'Error saving: ' + link.href });
+  if (message.action === 'saveSelectedLinksNotebookLM') {
+    const { links, notebookTitle } = message;
+    chrome.storage.local.get(['token', 'defaultDbId'], ({ token, defaultDbId: dbId }) => {
+      if (!token || !dbId) {
+        chrome.notifications.create('', { type: 'basic', iconUrl: 'icons/icon48.png', title: 'Save to Notion', message: 'Please select a default database in options page.' });
+        return;
+      }
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Notion-Version': '2022-06-28',
+        'Content-Type': 'application/json'
+      };
+      const requests = links.map(link => {
+        const body = JSON.stringify({
+          parent: { database_id: dbId },
+          properties: {
+            Name: { title: [{ text: { content: link.text || link.href } }] },
+            URL: { url: link.href },
+            Status: { status: { name: 'Waiting' } },
+            'NotebookLM Title': { rich_text: [{ text: { content: notebookTitle } }] }
+          },
+          children: [
+            {
+              object: 'block',
+              type: 'paragraph',
+              paragraph: {
+                rich_text: [{ type: 'text', text: { content: link.href, link: { url: link.href } } }]
+              }
+            }
+          ]
         });
+        return fetch('https://api.notion.com/v1/pages', { method: 'POST', headers, body })
+          .catch(err => {
+            chrome.notifications.create('', { type: 'basic', iconUrl: 'icons/icon48.png', title: 'Save to Notion', message: 'Error saving: ' + link.href });
+          });
+      });
+      Promise.all(requests).then(() => {
+        chrome.notifications.create('', { type: 'basic', iconUrl: 'icons/icon48.png', title: 'Save to Notion', message: `Saved ${links.length} links with NotebookLM title!` });
+      });
     });
-    chrome.notifications.create('', { type: 'basic', iconUrl: 'icons/icon48.png', title: 'Save to Notion', message: `Saved ${links.length} links!` });
-  });
+    return; // handled
+  }
+  if (message.action === 'saveSelectedLinks') {
+    const links = message.links;
+    chrome.storage.local.get(['token','defaultDbId'], ({token, defaultDbId: dbId}) => {
+      if (!token || !dbId) {
+        chrome.notifications.create('', { type: 'basic', iconUrl: 'icons/icon48.png', title: 'Save to Notion', message: 'Please select a default database in options page.' });
+        return;
+      }
+      const headers = { 'Authorization': `Bearer ${token}`, 'Notion-Version': '2022-06-28', 'Content-Type': 'application/json' };
+      links.forEach(link => {
+        const body = JSON.stringify({
+          parent: { database_id: dbId },
+          properties: { Name: { title: [{ text: { content: link.href } }] }, Status: { status: { name: 'Waiting' } } },
+          children: [{ object: 'block', type: 'paragraph', paragraph: { rich_text: [{ type: 'text', text: { content: link.text || link.href, link: { url: link.href } } }] } }]
+        });
+        fetch('https://api.notion.com/v1/pages', { method: 'POST', headers, body })
+          .catch(err => {
+            chrome.notifications.create('', { type: 'basic', iconUrl: 'icons/icon48.png', title: 'Save to Notion', message: 'Error saving: ' + link.href });
+          });
+      });
+      chrome.notifications.create('', { type: 'basic', iconUrl: 'icons/icon48.png', title: 'Save to Notion', message: `Saved ${links.length} links!` });
+    });
+  }
 });
